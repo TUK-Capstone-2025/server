@@ -1,4 +1,4 @@
-package member.dto;
+package com.springboot.tukserver.member.dto;
 
 public record MemberRegisterRequest(
         String userId,
