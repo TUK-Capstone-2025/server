@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 대시보드</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<nav th:fragment="navbarFrag" xmlns:sec="http://www.w3.org/1999/xhtml">
+  <div class="navbar">
+    <a href="/" class="logo">SFBRA 관리자</a>
+    <div class="links">
+      <a class="nav-link" sec:authorize="isAnonymous()" th:href="@{/member/login}">로그인</a>
+      <a class="nav-link" sec:authorize="isAuthenticated()" th:href="@{/member/logout}">로그아웃</a>
+      <a class="nav-link" sec:authorize="isAnonymous()" th:href="@{/member/register}">회원가입</a>
+    </div>
+  </div>
+</nav>
+
+<h1>관리자 대시보드</h1>
+<p>관리자 전용 페이지입니다.</p>
+</body>
+</html>

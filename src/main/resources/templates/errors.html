@@ -1,0 +1,13 @@
+<style>
+  .alert {
+    color: red;
+    font-size: 0.9em;
+    margin-left: 5px;
+    margin-top: -10px;
+    margin-bottom: 10px;
+  }
+</style>
+
+<div th:fragment="fieldErrorFrag(fieldName)" th:if="${#fields.hasErrors(fieldName)}" class="alert">
+  <div th:each="err : ${#fields.errors(fieldName)}" th:text="${err}" />
+</div>

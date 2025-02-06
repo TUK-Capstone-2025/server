@@ -1,0 +1,91 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    padding: 10px 20px;
+}
+.navbar .logo {
+    color: white;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-decoration: none;
+}
+.navbar .links {
+    display: flex;
+    gap: 15px;
+}
+.navbar .links a {
+    color: white;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+.navbar .links a:hover {
+    background-color: #575757;
+}
+.form-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.form-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+.form-container input {
+    width: 100%; /* 입력 필드가 컨테이너 너비에 맞게 확장 */
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+.form-container button {
+    width: 100%;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.form-container button:hover {
+    background-color: #575757;
+}
+.alert {
+    color: red;
+    font-size: 0.9em;
+    margin-left: 5px;
+    margin-top: -10px; /* 입력 필드와 간격 조정 */
+    margin-bottom: 10px;
+}
+.form-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f9f9f9;
+    box-sizing: border-box;
+}
+.form-container .register-link {
+    text-align: center;
+    margin-top: 10px;
+}
+.form-container .register-link a {
+    color: #333;
+    text-decoration: none;
+    font-weight: bold;
+}
+.form-container .register-link a:hover {
+    text-decoration: underline;
+}
