@@ -1,10 +1,38 @@
 <nav th:fragment="navbarFrag" xmlns:sec="http://www.w3.org/1999/xhtml">
     <div class="navbar">
         <a href="/" class="logo">SFBRA</a>
-        <div class="links">
-            <a class="nav-link" sec:authorize="isAnonymous()" th:href="@{/member/login}">로그인</a>
-            <a class="nav-link" sec:authorize="isAuthenticated()" th:href="@{/member/logout}">로그아웃</a>
-            <a class="nav-link" sec:authorize="isAnonymous()" th:href="@{/member/register}">회원가입</a>
+        <div class="links" id="nav-links">
+            <!-- JavaScript에서 로그인 상태 확인 후 동적으로 업데이트 -->
         </div>
     </div>
 </nav>
+
+<script>
+    async function updateNavbar() {
+        try {
+            const response = await fetch("/api/member/me");  // ✅ 로그인 상태 확인 API 호출
+            if (!response.ok) {
+                throw new Error("로그인되지 않음");
+            }
+
+            const user = await response.json();
+            document.getElementById("nav-links").innerHTML = `
+              <a class="nav-link" href="#">${user.userId}님 환영합니다!</a>
+              <a class="nav-link" href="#" onclick="logout()">로그아웃</a>
+          `;
+        } catch (error) {
+            document.getElementById("nav-links").innerHTML = `
+              <a class="nav-link" href="/member/login">로그인</a>
+              <a class="nav-link" href="/member/register">회원가입</a>
+          `;
+        }
+    }
+
+    function logout() {
+        fetch("/member/logout", { method: "POST" })
+            .then(() => window.location.href = "/")
+            .catch(error => console.error("로그아웃 실패", error));
+    }
+
+    updateNavbar();  // 페이지 로드 시 로그인 상태 확인
+</script>

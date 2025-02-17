@@ -1,37 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>로그인</title>
-  <link rel="stylesheet" href="/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-<nav th:replace="~{navbar :: navbarFrag}"></nav>
+<nav th:fragment="navbarFrag" xmlns:sec="http://www.w3.org/1999/xhtml">
+    <div class="navbar">
+        <a href="/" class="logo">SFBRA</a>
+        <div class="links">
+            <a class="nav-link" sec:authorize="isAnonymous()" th:href="@{/member/login}">로그인</a>
+            <a class="nav-link" sec:authorize="isAuthenticated()" th:href="@{/member/logout}">로그아웃</a>
+            <a class="nav-link" sec:authorize="isAnonymous()" th:href="@{/member/register}">회원가입</a>
+        </div>
+    </div>
+</nav>
 
- <div class="form-container">
-  <h2>로그인</h2>
-  <form th:action="@{/member/login}" method="post">
+<div class="form-container">
+    <h2>로그인</h2>
+    <form id="loginForm">
+        <label for="userId">아이디</label>
+        <input type="text" id="userId" placeholder="아이디를 입력하세요" required>
 
-      <label for="username">아이디</label>
-      <input type="text" id="username" name="username" placeholder="아이디를 입력하세요" required>
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" placeholder="비밀번호를 입력하세요" required>
 
-      <label for="password">비밀번호</label>
-      <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요" required>
-
-      <div th:if="${param.error}">
-          <div class="alert alert-danger">
-              사용자ID 또는 비밀번호를 확인해 주세요.
-          </div>
-      </div>
-
-      <button type="submit">로그인</button>
-      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-  </form>
-  <div class="register-link">
-    <p>계정이 없으신가요? <a href="/member/register">회원가입</a></p>
-  </div>
+        <button type="submit">로그인</button>
+    </form>
 </div>
+
+<script>
+    document.getElementById("loginForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        console.log("🚀 로그인 요청이 실행됨!");
+
+        const userId = document.getElementById("userId").value;
+        const password = document.getElementById("password").value;
+
+        const requestData = { userId, password };
+
+        try {
+            const response = await fetch("/api/member/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                redirect: "manual",
+                body: JSON.stringify(requestData)
+            });
+
+            const result = await response.text();
+            console.log("🔍 [DEBUG] 서버 응답:", result);  // 서버 응답을 콘솔에서 확인
+
+            if (!response.ok) {
+                alert("로그인 실패: " + result);
+                return;
+            }
+
+            alert("로그인 성공!");
+            window.location.href = "/";  // 로그인 후 홈으로 이동
+        } catch (error) {
+            console.error("Error:", error);
+            alert("서버 오류 발생. 다시 시도해주세요.");
+        }
+    });
+</script>
+
 </body>
 </html>
