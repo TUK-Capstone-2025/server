@@ -80,6 +80,20 @@ public class MemberService {
         memberRepository.save(member);
     }
 
+    public void changeNickname(String newNickname) {
+        // ✅ 현재 로그인된 사용자 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName(); // 현재 로그인한 사용자의 아이디 가져오기
+
+        // ✅ DB에서 사용자 정보 조회
+        Member member = memberRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // ✅ 새 닉네임 설정 후 저장
+        member.setNickname(newNickname);
+        memberRepository.save(member);
+    }
+
 
 
 }

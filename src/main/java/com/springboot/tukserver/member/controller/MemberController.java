@@ -4,6 +4,7 @@ import com.springboot.tukserver.ApiResponse;
 import com.springboot.tukserver.JwtUtil;
 import com.springboot.tukserver.member.domain.Member;
 import com.springboot.tukserver.member.dto.LoginRequest;
+import com.springboot.tukserver.member.dto.NicknameRequest;
 import com.springboot.tukserver.member.dto.PasswordRequest;
 import com.springboot.tukserver.member.dto.RegisterRequest;
 import com.springboot.tukserver.member.service.MemberService;
@@ -136,6 +137,20 @@ public class MemberController {
             memberService.changePassword(request.getCurrentPassword(), request.getNewPassword());
 
             return ResponseEntity.ok(new ApiResponse<>(true, "비밀번호가 성공적으로 변경되었습니다.", null));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/changeNick")
+    public ResponseEntity<ApiResponse<Void>> changeNickname(@Valid @RequestBody NicknameRequest request) {
+
+        try {
+            // ✅ 닉네임 변경 로직 실행
+            memberService.changeNickname(request.getNewNickname());
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "닉네임이 성공적으로 변경되었습니다.", null));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
