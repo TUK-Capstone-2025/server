@@ -16,11 +16,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-@RequiredArgsConstructor
 @Service
 public class MemberService {
 
@@ -40,6 +35,17 @@ public class MemberService {
         return member;
 
     }
+
+    public MemberService(MemberRepository memberRepository, TeamRepository teamRepository, PasswordEncoder passwordEncoder) {
+        this.memberRepository = memberRepository;
+        this.teamRepository = teamRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public Member findMemberById(Long memberId) {
+        return memberRepository.findById(memberId).orElse(null);  // ✅ 존재하지 않으면 `null` 반환
+    }
+
 
     @Transactional
     public void assignMemberToTeam(Long memberId, Long teamId) {
