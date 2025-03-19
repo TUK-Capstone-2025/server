@@ -94,6 +94,26 @@ public class MemberService {
         memberRepository.save(member);
     }
 
+    @Transactional
+    public void changeUserId(String newUserId) {
+        // ✅ 현재 로그인된 사용자 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserId = authentication.getName(); // 현재 로그인한 사용자의 아이디 가져오기
+
+        // ✅ DB에서 사용자 정보 조회
+        Member member = memberRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // ✅ 새 아이디가 이미 존재하는지 확인
+        if (memberRepository.existsByUserId(newUserId)) {
+            throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
+        }
+
+        // ✅ 새 아이디 설정 후 저장
+        member.setUserId(newUserId);
+        memberRepository.save(member);
+    }
+
 
 
 }
