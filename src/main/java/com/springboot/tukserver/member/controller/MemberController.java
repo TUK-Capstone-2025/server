@@ -4,11 +4,13 @@ import com.springboot.tukserver.ApiResponse;
 import com.springboot.tukserver.JwtUtil;
 import com.springboot.tukserver.member.domain.Member;
 import com.springboot.tukserver.member.dto.LoginRequest;
+import com.springboot.tukserver.member.dto.PasswordRequest;
 import com.springboot.tukserver.member.dto.RegisterRequest;
 import com.springboot.tukserver.member.service.MemberService;
 import com.springboot.tukserver.security.CustomUserDetails;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -125,6 +127,21 @@ public class MemberController {
 
         return ResponseEntity.ok(new ApiResponse<>(true, "멤버가 팀에 정상적으로 배정되었습니다!", responseData));
     }
+
+    @PostMapping("/changePass")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody PasswordRequest request) {
+
+        try {
+            // ✅ 비밀번호 변경 로직 실행
+            memberService.changePassword(request.getCurrentPassword(), request.getNewPassword());
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "비밀번호가 성공적으로 변경되었습니다.", null));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
 
 
 }
