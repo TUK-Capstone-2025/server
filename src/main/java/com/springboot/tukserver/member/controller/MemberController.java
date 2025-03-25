@@ -8,7 +8,6 @@ import com.springboot.tukserver.member.service.MemberService;
 import com.springboot.tukserver.security.CustomUserDetails;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,9 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,6 +65,8 @@ public class MemberController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginRequest loginRequest, HttpSession session) {
 
+        System.out.println("🔐 로그인 시도: userId = " + loginRequest.getUserId());
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -74,10 +74,19 @@ public class MemberController {
                     )
             );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContext securityContext = SecurityContextHolder.getContext();
+            securityContext.setAuthentication(authentication);
+
+            // ✅ 관리자 로그인 시 세션에 SecurityContext 저장
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            if (isAdmin) {
+                session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
+                return ResponseEntity.ok(new ApiResponse<>(true, "관리자 로그인 성공", "/admin/dashboard"));
+            }
 
             String token = jwtUtil.generateToken(loginRequest.getUserId()); // ✨ JWT 사용 시 필요
-
             return ResponseEntity.ok(new ApiResponse<>(true, "로그인 성공", token));
 
         } catch (Exception e) {

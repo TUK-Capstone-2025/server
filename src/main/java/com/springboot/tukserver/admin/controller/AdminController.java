@@ -5,6 +5,9 @@ import com.springboot.tukserver.member.domain.MemberRole;
 import com.springboot.tukserver.member.repository.MemberRepository;
 import com.springboot.tukserver.team.domain.Team;
 import com.springboot.tukserver.team.repository.TeamRepository;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,14 +28,23 @@ public class AdminController {
     }
 
     @GetMapping("/dashboard")
-    public String adminDashboard(Model model) {
+    public String adminDashboard(HttpSession session, Model model) {
+        // ✅ SecurityContext에서 관리자 정보 가져오기
+        SecurityContext securityContext = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
 
-        List<Member> members = memberRepository.findByRoleNot(MemberRole.ADMIN);// 회원 목록 가져오기
-        List<Team> teams = teamRepository.findAll(); // 팀 목록 가져오기
+        if (securityContext == null || securityContext.getAuthentication() == null) {
+            return "redirect:/member/login"; // ✅ 세션이 없으면 로그인 페이지로 이동
+        }
 
-        model.addAttribute("members", members);
-        model.addAttribute("teams", teams);
+        UserDetails adminUser = (UserDetails) securityContext.getAuthentication().getPrincipal();
+        model.addAttribute("adminUser", adminUser);
 
         return "admin/dashboard";
+    }
+
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/member/login";
     }
 }

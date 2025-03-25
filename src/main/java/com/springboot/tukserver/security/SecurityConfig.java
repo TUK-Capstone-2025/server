@@ -38,20 +38,28 @@ public class SecurityConfig {
         http
                 .csrf().disable()
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // ✅ 세션 유지
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/member/register", "/api/member/login").permitAll()  // ✅ 회원가입 API는 인증 없이 허용.
                         .requestMatchers(HttpMethod.GET, "/member/**").permitAll()
                         .requestMatchers("/api/member/me").authenticated()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")  // ✅ 관리자만 접근 가능
+                        .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")  // ✅ 관리자만 접근 가능
+                        .requestMatchers("/api/drive-records/**").authenticated()
+
                         .anyRequest().permitAll()  // ✅ 나머지 요청은 모두 허용 (필요하면 `authenticated()`로 변경 가능)
+                )
+                .formLogin(login -> login
+                        .loginPage("/member/login")  // ✅ 로그인 페이지 설정
+                        .defaultSuccessUrl("/", true)  // ✅ 로그인 성공 시 리디렉트
+                        .permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout((logout) -> logout
                         .logoutRequestMatcher(new AntPathRequestMatcher("/member/logout"))
                         .logoutSuccessUrl("/")
-                        .invalidateHttpSession(true))
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")) // ✅ JSESSIONID 삭제 (관리자 로그아웃 시 필요)
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
