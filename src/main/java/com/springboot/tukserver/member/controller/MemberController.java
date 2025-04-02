@@ -3,9 +3,13 @@ package com.springboot.tukserver.member.controller;
 import com.springboot.tukserver.ApiResponse;
 import com.springboot.tukserver.JwtUtil;
 import com.springboot.tukserver.member.domain.Member;
+import com.springboot.tukserver.member.domain.MemberStatus;
 import com.springboot.tukserver.member.dto.*;
+import com.springboot.tukserver.member.repository.MemberRepository;
 import com.springboot.tukserver.member.service.MemberService;
 import com.springboot.tukserver.security.CustomUserDetails;
+import com.springboot.tukserver.team.domain.Team;
+import com.springboot.tukserver.team.dto.TeamApplicationResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -34,6 +39,7 @@ public class MemberController {
 
     private final MemberService memberService;
     private final AuthenticationManager authenticationManager;
+    private final MemberRepository memberRepository;
 
 
     @PostMapping("/register")
@@ -125,7 +131,7 @@ public class MemberController {
                     .body(new ApiResponse<>(false, "해당 사용자를 찾을 수 없습니다.", null));
         }
 
-        memberService.assignMemberToTeam(memberId, teamId);
+        memberService.assignToTeam(memberId);
 
         // ✅ JSON 응답 데이터 구성
         Map<String, Object> responseData = new HashMap<>();
@@ -177,7 +183,143 @@ public class MemberController {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
+    @GetMapping("/team")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMyTeam() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "인증 정보가 없습니다.", null));
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof CustomUserDetails customUser)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "유효한 사용자 정보가 없습니다.", null));
+        }
+
+        Member member = memberRepository.findByUserId(customUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
+
+        Map<String, Object> result = new HashMap<>();
+
+        Team team = member.getTeam();
+        if (team == null || member.getStatus() != MemberStatus.APPROVE) {
+            result.put("isInTeam", false);
+            return ResponseEntity.ok(new ApiResponse<>(true, "팀에 속해있지 않습니다.", result));
+        }
+
+        result.put("isInTeam", true);
+        result.put("teamId", team.getTeamId());
+        result.put("teamName", team.getName());
+        result.put("leader", team.getLeader());
+        result.put("memberCount", team.getMemberCount());
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "팀 정보 조회 성공", result));
+    }
+
+    @PostMapping("/applyTeam/{teamId}")
+    public ResponseEntity<ApiResponse<Void>> applyToTeamWithToken(@PathVariable Long teamId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "인증 정보가 없습니다.", null));
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof CustomUserDetails customUser)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "유효한 사용자 정보가 없습니다.", null));
+        }
+
+        // 🔍 토큰에서 userId 추출 후 member 조회
+        Member member = memberRepository.findByUserId(customUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
+
+        // ✅ 팀 신청 로직 수행
+        memberService.applyToTeam(member.getMemberId(), teamId);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "팀 신청 완료(대기 중).", null));
+    }
+
+
+    @GetMapping("/listMembers")
+    public ResponseEntity<ApiResponse<List<Member>>> getPendingMembersForLeader() {
+        // 현재 인증된 사용자 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "인증 정보가 없습니다.", null));
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof CustomUserDetails customUser)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "유효한 사용자 정보가 없습니다.", null));
+        }
+
+        // 현재 로그인한 리더의 userId
+        String leaderUserId = customUser.getUsername();
+        System.out.println("🔍 리더 userId: " + leaderUserId);
+
+        // 리더의 신청 목록 조회
+        List<Member> pending = memberService.findPendingMembersByLeader(leaderUserId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "승인 대기 중인 멤버 목록", pending));
+    }
+
+    @GetMapping("/applyList")
+    public ResponseEntity<ApiResponse<List<TeamApplicationResponse>>> getMyTeamApplications() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "인증 정보가 없습니다.", null));
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof CustomUserDetails customUser)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "유효한 사용자 정보가 없습니다.", null));
+        }
+
+        // 🔍 현재 로그인된 사용자에서 userId → memberId 조회
+        String userId = customUser.getUsername();
+        Member member = memberRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
+
+        List<TeamApplicationResponse> applications = memberService.getTeamApplications(member.getMemberId());
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "팀 신청 상태 조회 성공", applications));
+    }
+
+    @DeleteMapping("/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelTeamApplication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "인증 정보가 없습니다.", null));
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof CustomUserDetails customUser)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "유효한 사용자 정보가 없습니다.", null));
+        }
+
+        Member member = memberRepository.findByUserId(customUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
+
+        memberService.cancelTeamApplication(member.getMemberId());
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "팀 신청이 성공적으로 취소되었습니다.", null));
+    }
 
 
 }

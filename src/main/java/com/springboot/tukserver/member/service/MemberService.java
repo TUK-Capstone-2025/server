@@ -2,10 +2,12 @@ package com.springboot.tukserver.member.service;
 
 import com.springboot.tukserver.member.domain.Member;
 import com.springboot.tukserver.member.domain.MemberRole;
+import com.springboot.tukserver.member.domain.MemberStatus;
 import com.springboot.tukserver.member.repository.MemberRepository;
 import com.springboot.tukserver.team.domain.Team;
+import com.springboot.tukserver.team.dto.TeamApplicationResponse;
 import com.springboot.tukserver.team.repository.TeamRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,6 +19,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class MemberService {
@@ -50,15 +54,21 @@ public class MemberService {
 
 
     @Transactional
-    public void assignMemberToTeam(Long memberId, Long teamId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
-
+    public void assignToTeam(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
 
-        member.setTeam(team);  // 멤버에게 팀을 할당
-        memberRepository.save(member);  // 변경사항 저장
+        if (member.getStatus().equals("APPROVE")) {
+            throw new IllegalStateException("이미 승인된 멤버입니다.");
+        }
+
+        Team team = member.getTeam();
+        member.setStatus(MemberStatus.APPROVE);
+        team.setMemberCount(team.getMemberCount() + 1);
+        team.getMembers().add(member);
+
+        memberRepository.save(member);
+        teamRepository.save(team);
     }
 
     public void changePassword(String currentPassword, String newPassword) {
@@ -113,6 +123,102 @@ public class MemberService {
         member.setUserId(newUserId);
         memberRepository.save(member);
     }
+
+    @Transactional
+    public void applyToTeam(Long memberId, Long teamId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
+
+        if (member.getTeam() != null) {
+            throw new IllegalStateException("이미 팀에 신청했거나 배정된 상태입니다.");
+        }
+
+        // 💡 팀 정보만 넣고 상태는 REJECT
+        member.setTeam(team);
+        member.setStatus(MemberStatus.PENDING);
+
+        memberRepository.save(member);
+    }
+
+    public List<Member> findPendingMembersByLeader(String leaderUserId) {
+        // 리더가 관리하는 팀 찾기
+        Team team = teamRepository.findByLeader(leaderUserId)
+                .orElseThrow(() -> new RuntimeException("리더의 팀을 찾을 수 없습니다."));
+
+        return memberRepository.findByTeamAndStatus(team, MemberStatus.PENDING);
+    }
+
+    public List<TeamApplicationResponse> getTeamApplications(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("해당 멤버를 찾을 수 없습니다."));
+
+        List<Member> applications = memberRepository.findAllByUserId(member.getUserId());
+
+        return applications.stream()
+                .filter(m -> m.getTeam() != null) // 팀에 신청한 경우만 필터
+                .map(m -> new TeamApplicationResponse(
+                        m.getTeam().getTeamId(),
+                        m.getTeam().getName(),
+                        m.getStatus()
+                ))
+                .toList();
+    }
+    @Transactional
+    public void approveMember(Long memberId, String leaderUserId) {
+        Team team = teamRepository.findByLeader(leaderUserId)
+                .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
+
+        if (!team.equals(member.getTeam())) {
+            throw new IllegalArgumentException("해당 멤버는 이 팀에 속해 있지 않습니다.");
+        }
+
+        member.setStatus(MemberStatus.APPROVE);
+        team.setMemberCount(team.getMemberCount() + 1);
+
+        memberRepository.save(member);
+        teamRepository.save(team);
+    }
+
+    @Transactional
+    public void rejectMember(Long memberId, String leaderUserId) {
+        Team team = teamRepository.findByLeader(leaderUserId)
+                .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
+
+        if (!team.equals(member.getTeam())) {
+            throw new IllegalArgumentException("해당 멤버는 이 팀에 속해 있지 않습니다.");
+        }
+
+        member.setTeam(null);
+        member.setStatus(MemberStatus.REJECT);
+
+        memberRepository.save(member);
+    }
+
+    @Transactional
+    public void cancelTeamApplication(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
+
+        if (member.getStatus() != MemberStatus.PENDING) {
+            throw new IllegalStateException("현재 신청 중인 상태가 아닙니다. 취소할 수 없습니다.");
+        }
+
+        member.setTeam(null);
+        member.setStatus(MemberStatus.NONE); // 또는 REJECT
+        memberRepository.save(member);
+    }
+
+
+
+
 
 
 

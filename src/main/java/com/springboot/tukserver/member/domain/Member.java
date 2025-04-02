@@ -1,5 +1,6 @@
 package com.springboot.tukserver.member.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.springboot.tukserver.team.domain.Team;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -27,13 +28,15 @@ public class Member {
     @Column(unique = true)
     private String nickname;
 
-    private String status = "REJECT";
+    @Enumerated(EnumType.STRING)
+    private MemberStatus status = MemberStatus.NONE;
 
     @Enumerated(EnumType.STRING)
     private MemberRole role = MemberRole.USER;
 
     @ManyToOne
-    @JoinColumn(name = "teamId")
+    @JoinColumn(name = "team_id")
+    @JsonIgnore
     private Team team;
 
 

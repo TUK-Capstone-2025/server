@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -20,6 +21,10 @@ public class Team {
     private String leader;
     private Integer memberCount;
 
-    @OneToMany(mappedBy = "team")
-    private List<Member> members;
+    @Column(length = 1000)
+    private String description;
+
+
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
+    private List<Member> members = new ArrayList<>();
 }
