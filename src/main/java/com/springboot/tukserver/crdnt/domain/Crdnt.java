@@ -2,12 +2,13 @@ package com.springboot.tukserver.crdnt.domain;
 
 import com.springboot.tukserver.record.domain.DriveRecord;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Crdnt {
 
     @Id
@@ -15,11 +16,16 @@ public class Crdnt {
     private Long num;
 
     @Column
-    private Long x;
-    private Long y;
+    private Double latitude;
+    private Double longitude;
+
+    @Column(nullable = false)
+    private Integer accidentStatus = 0;
 
     @ManyToOne
     @JoinColumn(name = "recordId")
     private DriveRecord driveRecord;
+
+
 
 }

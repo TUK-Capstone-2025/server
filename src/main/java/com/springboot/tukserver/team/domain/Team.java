@@ -18,6 +18,7 @@ public class Team {
     private Long teamId;
 
     private String name;
+
     private String leader;
     private Integer memberCount;
 

@@ -2,6 +2,7 @@ package com.springboot.tukserver.team.controller;
 
 import com.springboot.tukserver.ApiResponse;
 import com.springboot.tukserver.member.domain.Member;
+import com.springboot.tukserver.member.repository.MemberRepository;
 import com.springboot.tukserver.member.service.MemberService;
 import com.springboot.tukserver.security.CustomUserDetails;
 import com.springboot.tukserver.team.domain.Team;
@@ -11,6 +12,7 @@ import com.springboot.tukserver.team.dto.TeamResponse;
 import com.springboot.tukserver.team.repository.TeamRepository;
 import com.springboot.tukserver.team.service.TeamService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +30,7 @@ public class TeamController {
     private final TeamService teamService;
     private final TeamRepository teamRepository;
     private final MemberService memberService;
+    private final MemberRepository memberRepository;
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<Void>> createTeam(@RequestBody TeamRequest request) {
@@ -46,7 +49,14 @@ public class TeamController {
             Map<String, Object> map = new HashMap<>();
             map.put("teamId", team.getTeamId());
             map.put("name", team.getName());
-            map.put("leader", team.getLeader());
+
+            // 🔍 리더 userId → 닉네임으로 변환
+            String leaderUserId = team.getLeader();
+            String leaderNickname = memberRepository.findByUserId(leaderUserId)
+                    .map(Member::getNickname)
+                    .orElse("알 수 없음"); // 예외 상황 대비
+
+            map.put("leader", leaderNickname);
             map.put("description", team.getDescription());
             map.put("memberCount", team.getMemberCount());
             return map;
@@ -110,6 +120,14 @@ public class TeamController {
             throw new RuntimeException("유효한 사용자 정보가 없습니다.");
         }
 
+    }
+
+    @PostMapping("/kick/{memberId}")
+    public ResponseEntity<ApiResponse<Void>> kickMember(
+            @PathVariable Long memberId
+    ) {
+        memberService.kickOutMember(memberId); // 리더 검증은 서비스 내에서
+        return ResponseEntity.ok(new ApiResponse<>(true, "멤버가 퇴출되었습니다.", null));
     }
 
 }

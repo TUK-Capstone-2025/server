@@ -1,5 +1,6 @@
 package com.springboot.tukserver.record.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,14 +8,10 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class RecordResponse {
+@Builder
+public class DriveRecordDTO {
 
     private Long recordId;
     private LocalDateTime startTime;
-
-    public RecordResponse(Long id, LocalDateTime startTime) {
-        this.recordId = id;
-        this.startTime = startTime;
-    }
 
 }

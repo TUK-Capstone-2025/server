@@ -57,9 +57,15 @@ public class TeamService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
 
+        // 🔍 리더 userId → memberId 변환
+        Member leader = memberRepository.findByUserId(team.getLeader())
+                .orElseThrow(() -> new RuntimeException("리더를 찾을 수 없습니다."));
+
+
         List<TeamResponse.MemberSimpleDto> members = team.getMembers().stream()
+                .filter(member -> member.getStatus() == MemberStatus.APPROVE)
                 .map(member -> TeamResponse.MemberSimpleDto.builder()
-                        .userId(member.getUserId())
+                        .memberId(member.getMemberId())
                         .name(member.getName())
                         .nickname(member.getNickname())
                         .build())
@@ -68,10 +74,12 @@ public class TeamService {
         return TeamResponse.builder()
                 .teamId(team.getTeamId())
                 .name(team.getName())
-                .leader(team.getLeader())
+                .leader(String.valueOf(leader.getMemberId()))
                 .description(team.getDescription())
                 .memberCount(team.getMemberCount())
                 .members(members)
                 .build();
     }
+
+
 }

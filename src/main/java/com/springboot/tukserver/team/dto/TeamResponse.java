@@ -22,7 +22,7 @@ public class TeamResponse {
     @Builder
     @AllArgsConstructor
     public static class MemberSimpleDto {
-        private String userId;
+        private long memberId;
         private String name;
         private String nickname;
     }

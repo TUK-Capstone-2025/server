@@ -1,11 +1,12 @@
 package com.springboot.tukserver.member.service;
 
 import com.springboot.tukserver.member.domain.Member;
-import com.springboot.tukserver.member.domain.MemberRole;
+import com.springboot.tukserver.member.dto.MemberSimpleDTO;
 import com.springboot.tukserver.member.domain.MemberStatus;
 import com.springboot.tukserver.member.repository.MemberRepository;
 import com.springboot.tukserver.team.domain.Team;
 import com.springboot.tukserver.team.dto.TeamApplicationResponse;
+import com.springboot.tukserver.team.dto.TeamResponse;
 import com.springboot.tukserver.team.repository.TeamRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -142,12 +143,18 @@ public class MemberService {
         memberRepository.save(member);
     }
 
-    public List<Member> findPendingMembersByLeader(String leaderUserId) {
-        // 리더가 관리하는 팀 찾기
+    public List<MemberSimpleDTO> findPendingMembersByLeader(String leaderUserId) {
         Team team = teamRepository.findByLeader(leaderUserId)
                 .orElseThrow(() -> new RuntimeException("리더의 팀을 찾을 수 없습니다."));
 
-        return memberRepository.findByTeamAndStatus(team, MemberStatus.PENDING);
+        return memberRepository.findByTeamAndStatus(team, MemberStatus.PENDING).stream()
+                .map(member -> MemberSimpleDTO.builder()
+                        .memberId(member.getMemberId())
+                        .userId(member.getUserId())
+                        .name(member.getName())
+                        .nickname(member.getNickname())
+                        .build())
+                .toList();
     }
 
     public List<TeamApplicationResponse> getTeamApplications(Long memberId) {
@@ -217,6 +224,34 @@ public class MemberService {
     }
 
 
+    @Transactional
+    public void kickOutMember(Long targetMemberId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserId = authentication.getName(); // 현재 로그인된 리더 ID
+
+        Member leader = memberRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new RuntimeException("로그인한 리더 정보를 찾을 수 없습니다."));
+
+        Team team = teamRepository.findByLeader(leader.getUserId())
+                .orElseThrow(() -> new RuntimeException("해당 리더의 팀이 없습니다."));
+
+        Member targetMember = memberRepository.findById(targetMemberId)
+                .orElseThrow(() -> new RuntimeException("대상 멤버를 찾을 수 없습니다."));
+
+        // 같은 팀인지 확인
+        if (!team.equals(targetMember.getTeam())) {
+            throw new IllegalStateException("이 멤버는 리더의 팀에 속해있지 않습니다.");
+        }
+
+        // 퇴출 처리
+        targetMember.setTeam(null);
+        targetMember.setStatus(MemberStatus.NONE);
+
+        team.setMemberCount(team.getMemberCount() - 1);
+
+        memberRepository.save(targetMember);
+        teamRepository.save(team);
+    }
 
 
 

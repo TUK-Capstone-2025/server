@@ -10,6 +10,7 @@ import com.springboot.tukserver.member.service.MemberService;
 import com.springboot.tukserver.security.CustomUserDetails;
 import com.springboot.tukserver.team.domain.Team;
 import com.springboot.tukserver.team.dto.TeamApplicationResponse;
+import com.springboot.tukserver.team.dto.TeamResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -207,14 +208,12 @@ public class MemberController {
         Team team = member.getTeam();
         if (team == null || member.getStatus() != MemberStatus.APPROVE) {
             result.put("isInTeam", false);
+            result.put("teamId", null);
             return ResponseEntity.ok(new ApiResponse<>(true, "팀에 속해있지 않습니다.", result));
         }
 
         result.put("isInTeam", true);
         result.put("teamId", team.getTeamId());
-        result.put("teamName", team.getName());
-        result.put("leader", team.getLeader());
-        result.put("memberCount", team.getMemberCount());
 
         return ResponseEntity.ok(new ApiResponse<>(true, "팀 정보 조회 성공", result));
     }
@@ -245,32 +244,15 @@ public class MemberController {
         return ResponseEntity.ok(new ApiResponse<>(true, "팀 신청 완료(대기 중).", null));
     }
 
-
     @GetMapping("/listMembers")
-    public ResponseEntity<ApiResponse<List<Member>>> getPendingMembersForLeader() {
-        // 현재 인증된 사용자 가져오기
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public ResponseEntity<ApiResponse<List<MemberSimpleDTO>>> getPendingMembersForLeader() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String leaderUserId = auth.getName();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(false, "인증 정보가 없습니다.", null));
-        }
-
-        Object principal = authentication.getPrincipal();
-
-        if (!(principal instanceof CustomUserDetails customUser)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(false, "유효한 사용자 정보가 없습니다.", null));
-        }
-
-        // 현재 로그인한 리더의 userId
-        String leaderUserId = customUser.getUsername();
-        System.out.println("🔍 리더 userId: " + leaderUserId);
-
-        // 리더의 신청 목록 조회
-        List<Member> pending = memberService.findPendingMembersByLeader(leaderUserId);
+        List<MemberSimpleDTO> pending = memberService.findPendingMembersByLeader(leaderUserId);
         return ResponseEntity.ok(new ApiResponse<>(true, "승인 대기 중인 멤버 목록", pending));
     }
+
 
     @GetMapping("/applyList")
     public ResponseEntity<ApiResponse<List<TeamApplicationResponse>>> getMyTeamApplications() {
