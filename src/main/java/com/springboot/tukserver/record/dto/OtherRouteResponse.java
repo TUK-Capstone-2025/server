@@ -11,8 +11,8 @@ import java.util.List;
 @AllArgsConstructor
 public class OtherRouteResponse {
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private String startTime;
+    private String endTime;
     private List<RoutePoint> route;
 
     @Getter

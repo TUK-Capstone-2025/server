@@ -34,6 +34,9 @@ public class Member {
     @Enumerated(EnumType.STRING)
     private MemberRole role = MemberRole.USER;
 
+    @Column(nullable = true)
+    private String profileImageUrl;
+
     @ManyToOne
     @JoinColumn(name = "team_id")
     @JsonIgnore

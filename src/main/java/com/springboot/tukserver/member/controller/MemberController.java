@@ -10,7 +10,6 @@ import com.springboot.tukserver.member.service.MemberService;
 import com.springboot.tukserver.security.CustomUserDetails;
 import com.springboot.tukserver.team.domain.Team;
 import com.springboot.tukserver.team.dto.TeamApplicationResponse;
-import com.springboot.tukserver.team.dto.TeamResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +23,14 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 
 @RestController
@@ -112,6 +115,7 @@ public class MemberController {
             userInfo.put("userId", customUser.getUsername());
             userInfo.put("name", customUser.getName());
             userInfo.put("nickname", customUser.getNickname());
+            userInfo.put("profileImageUrl", customUser.getProfileImageUrl());
                 return ResponseEntity.ok(new ApiResponse<>(true, "현재 로그인된 사용자", userInfo));
             }
 
@@ -301,6 +305,37 @@ public class MemberController {
         memberService.cancelTeamApplication(member.getMemberId());
 
         return ResponseEntity.ok(new ApiResponse<>(true, "팀 신청이 성공적으로 취소되었습니다.", null));
+    }
+
+    @PostMapping("/uploadProfile")
+    public ResponseEntity<ApiResponse<String>> uploadProfileImage(@RequestParam("file") MultipartFile file) {
+        try {
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+            // 저장 경로를 static/images/profile 안으로 지정
+            String uploadDir = new File("uploads/profile").getAbsolutePath();
+            File folder = new File(uploadDir);
+            if (!folder.exists()) {
+                folder.mkdirs();
+            }
+
+            File dest = new File(uploadDir + "/" + fileName);
+            file.transferTo(dest);
+            String imageUrl = "https://2b00-1-237-205-122.ngrok-free.app/images/profile/" + fileName;
+
+            // 토큰 기반 사용자 식별
+            String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+            Member member = memberRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자 없음"));
+
+            member.setProfileImageUrl(imageUrl);
+            memberRepository.save(member);
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "프로필 이미지 등록 성공", imageUrl));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "업로드 실패: " + e.getMessage(), null));
+        }
     }
 
 

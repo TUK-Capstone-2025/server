@@ -1,6 +1,7 @@
 package com.springboot.tukserver.member.service;
 
 import com.springboot.tukserver.member.domain.Member;
+import com.springboot.tukserver.member.dto.MemberProfileResponse;
 import com.springboot.tukserver.member.dto.MemberSimpleDTO;
 import com.springboot.tukserver.member.domain.MemberStatus;
 import com.springboot.tukserver.member.repository.MemberRepository;
@@ -20,8 +21,15 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
+
 
 @Service
 public class MemberService {
@@ -253,7 +261,44 @@ public class MemberService {
         teamRepository.save(team);
     }
 
+    @Transactional
+    public String saveProfileImage(String userId, MultipartFile file) throws IOException {
+        Member member = memberRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("멤버를 찾을 수 없습니다."));
 
+        // 저장할 경로 설정 (예: static/profile)
+        String uploadDir = "src/main/resources/static/profile/";
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path path = Paths.get(uploadDir + fileName);
+        Files.createDirectories(path.getParent());
+        Files.write(path, file.getBytes());
+
+        // DB에 저장할 URL 경로
+        String imageUrl = "/profile/" + fileName;
+        member.setProfileImageUrl(imageUrl);
+        memberRepository.save(member);
+
+        return imageUrl;
+    }
+
+    @Transactional(readOnly = true)
+    public MemberProfileResponse getMemberProfile(Long targetMemberId, String requesterUserId) {
+        Member requester = memberRepository.findByUserId(requesterUserId)
+                .orElseThrow(() -> new RuntimeException("요청자를 찾을 수 없습니다."));
+
+        Member target = memberRepository.findById(targetMemberId)
+                .orElseThrow(() -> new RuntimeException("대상 멤버를 찾을 수 없습니다."));
+
+        if (requester.getTeam() == null || target.getTeam() == null ||
+                !requester.getTeam().getTeamId().equals(target.getTeam().getTeamId())) {
+            throw new IllegalArgumentException("같은 팀이 아닙니다.");
+        }
+
+        return MemberProfileResponse.builder()
+                .nickname(target.getNickname())
+                .profileImageUrl(target.getProfileImageUrl())
+                .build();
+    }
 
 
 

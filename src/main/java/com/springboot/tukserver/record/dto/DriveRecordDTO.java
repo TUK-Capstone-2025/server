@@ -12,6 +12,6 @@ import java.time.LocalDateTime;
 public class DriveRecordDTO {
 
     private Long recordId;
-    private LocalDateTime startTime;
+    private String startTime;
 
 }

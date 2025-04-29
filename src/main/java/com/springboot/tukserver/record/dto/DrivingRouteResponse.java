@@ -11,11 +11,9 @@ import java.util.List;
 @Builder
 public class DrivingRouteResponse {
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime startTime;
+    private String startTime;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime endTime;
+    private String endTime;
 
     private List<RoutePoint> route;
 

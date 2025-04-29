@@ -34,15 +34,17 @@ public class RecordService {
         Member member = memberRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("회원 정보를 찾을 수 없습니다."));
 
-        return recordRepository.findAllByMemberOrderByStartTimeDesc(member);
+        return recordRepository.findAllByMemberOrderByEndTimeDesc(member);
     }
 
 
     public List<DriveRecordDTO> getDriveRecordsByMember(Member member) {
-        return recordRepository.findByMember(member).stream()
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy.MM.dd HH:mm:ss");
+
+        return recordRepository.findAllByMemberOrderByEndTimeDesc(member).stream()
                 .map(record -> DriveRecordDTO.builder()
                         .recordId(record.getRecordId())
-                        .startTime(record.getStartTime())
+                        .startTime(record.getStartTime().format(formatter))  // 💡 포맷 적용
                         .build())
                 .toList();
     }
@@ -100,6 +102,7 @@ public class RecordService {
         }
 
         List<Crdnt> coordinates = crdntRepository.findByDriveRecord(record);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy.MM.dd HH:mm:ss");
 
         List<RoutePoint> route = coordinates.stream().map(c -> new RoutePoint(
                 c.getLatitude(),
@@ -108,8 +111,8 @@ public class RecordService {
         )).toList();
 
         return DrivingRouteResponse.builder()
-                .startTime(record.getStartTime())
-                .endTime(record.getEndTime())
+                .startTime(record.getStartTime().format(formatter))
+                .endTime(record.getEndTime().format(formatter))
                 .route(route)
                 .build();
     }
@@ -128,6 +131,7 @@ public class RecordService {
 
         // ⛳ 좌표 리스트 가져오기
         List<Crdnt> crdnts = crdntRepository.findByDriveRecord(record);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy.MM.dd HH:mm:ss");
 
         // 🧩 변환
         List<OtherRouteResponse.RoutePoint> routePoints = crdnts.stream()
@@ -139,9 +143,13 @@ public class RecordService {
                 ).toList();
 
         return OtherRouteResponse.builder()
-                .startTime(record.getStartTime())
-                .endTime(record.getEndTime())
-                .route(routePoints)
+                .startTime(record.getStartTime().format(formatter))
+                .endTime(record.getEndTime().format(formatter))
+                .route(crdnts.stream().map(c -> OtherRouteResponse.RoutePoint.builder()
+                        .latitude(c.getLatitude())
+                        .longitude(c.getLongitude())
+                        .warning(c.getAccidentStatus())
+                        .build()).toList())
                 .build();
     }
 

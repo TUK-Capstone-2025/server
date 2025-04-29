@@ -2,6 +2,7 @@ package com.springboot.tukserver.team.controller;
 
 import com.springboot.tukserver.ApiResponse;
 import com.springboot.tukserver.member.domain.Member;
+import com.springboot.tukserver.member.dto.MemberProfileResponse;
 import com.springboot.tukserver.member.repository.MemberRepository;
 import com.springboot.tukserver.member.service.MemberService;
 import com.springboot.tukserver.security.CustomUserDetails;
@@ -128,6 +129,15 @@ public class TeamController {
     ) {
         memberService.kickOutMember(memberId); // 리더 검증은 서비스 내에서
         return ResponseEntity.ok(new ApiResponse<>(true, "멤버가 퇴출되었습니다.", null));
+    }
+
+    @GetMapping("/member/profile/{memberId}")
+    public ResponseEntity<ApiResponse<MemberProfileResponse>> getMemberProfile(@PathVariable Long memberId) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        MemberProfileResponse response = memberService.getMemberProfile(memberId, userId);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "멤버 프로필 조회 성공", response));
     }
 
 }
