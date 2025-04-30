@@ -19,6 +19,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 
 @Configuration
@@ -36,9 +39,11 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors().configurationSource(corsConfigurationSource())  // 추가
+                .and()
                 .csrf().disable()
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/member/register", "/api/member/login").permitAll()  // ✅ 회원가입 API는 인증 없이 허용.
@@ -46,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/member/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")  // ✅ 관리자만 접근 가능
                         .requestMatchers("/api/drive-records/**").authenticated()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .anyRequest().permitAll()  // ✅ 나머지 요청은 모두 허용 (필요하면 `authenticated()`로 변경 가능)
                 )
@@ -94,5 +100,21 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(MemberRepository memberRepository) {
         return new CustomUserDetailsService(memberRepository);
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowCredentials(true);
+        configuration.addAllowedOrigin("https://2b00-1-237-205-122.ngrok-free.app");
+        configuration.addAllowedHeader("*");
+        configuration.addAllowedMethod("*");
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+
+
 
 }

@@ -4,17 +4,18 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Getter
 @Setter
 public class RecordResponse {
 
     private Long recordId;
-    private LocalDateTime startTime;
+    private String startTime;
 
     public RecordResponse(Long id, LocalDateTime startTime) {
         this.recordId = id;
-        this.startTime = startTime;
+        this.startTime = startTime.format(DateTimeFormatter.ofPattern("yy.MM.dd HH:mm:ss"));
     }
 
 }
