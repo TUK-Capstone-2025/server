@@ -140,7 +140,7 @@ public class MemberService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
 
-        if (member.getTeam() != null) {
+        if (member.getStatus() == MemberStatus.PENDING || member.getStatus() == MemberStatus.APPROVE) {
             throw new IllegalStateException("이미 팀에 신청했거나 배정된 상태입니다.");
         }
 

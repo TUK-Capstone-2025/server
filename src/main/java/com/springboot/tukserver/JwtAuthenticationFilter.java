@@ -30,6 +30,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
+        // 로그인, 회원가입은 필터 제외
+        String uri = request.getRequestURI();
+        if (uri.equals("/api/member/login") || uri.equals("/api/member/register")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String token = request.getHeader("Authorization");
 
         if (token != null && token.startsWith("Bearer ")) {

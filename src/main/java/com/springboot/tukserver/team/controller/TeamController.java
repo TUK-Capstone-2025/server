@@ -67,18 +67,14 @@ public class TeamController {
     }
 
     @GetMapping("/{teamId}/members")
-    public ResponseEntity<ApiResponse<List<MemberDto>>> getTeamMembers(@PathVariable Long teamId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
-
-        List<Member> members = team.getMembers();
-
-        // DTO로 변환 (선택사항)
-        List<MemberDto> result = members.stream()
-                .map(member -> new MemberDto(member.getUserId(), member.getName(), member.getNickname()))
-                .toList();
-
-        return ResponseEntity.ok(new ApiResponse<>(true, "팀의 멤버 목록", result));
+    public ResponseEntity<ApiResponse<TeamResponse>> getTeamMembersWithDistance(@PathVariable Long teamId) {
+        try {
+            TeamResponse teamInfo = teamService.getTeamWithSortedMembers(teamId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "팀 정보 조회 성공", teamInfo));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "오류: " + e.getMessage(), null));
+        }
     }
 
     @PostMapping("/approve")

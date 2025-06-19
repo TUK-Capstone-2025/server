@@ -3,7 +3,9 @@ package com.springboot.tukserver.team.service;
 import com.springboot.tukserver.member.domain.Member;
 import com.springboot.tukserver.member.domain.MemberStatus;
 import com.springboot.tukserver.member.repository.MemberRepository;
+import com.springboot.tukserver.record.service.RecordService;
 import com.springboot.tukserver.team.domain.Team;
+import com.springboot.tukserver.team.dto.MemberDistanceDTO;
 import com.springboot.tukserver.team.dto.TeamRequest;
 import com.springboot.tukserver.team.dto.TeamResponse;
 import com.springboot.tukserver.team.repository.TeamRepository;
@@ -12,9 +14,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -23,6 +25,7 @@ public class TeamService {
 
     private final TeamRepository teamRepository;
     private final MemberRepository memberRepository;
+    private final RecordService recordService;
 
     @Transactional
     public Team createTeam(TeamRequest request) {
@@ -61,7 +64,6 @@ public class TeamService {
         Member leader = memberRepository.findByUserId(team.getLeader())
                 .orElseThrow(() -> new RuntimeException("리더를 찾을 수 없습니다."));
 
-
         List<TeamResponse.MemberSimpleDto> members = team.getMembers().stream()
                 .filter(member -> member.getStatus() == MemberStatus.APPROVE)
                 .map(member -> TeamResponse.MemberSimpleDto.builder()
@@ -76,8 +78,36 @@ public class TeamService {
                 .name(team.getName())
                 .leader(String.valueOf(leader.getMemberId()))
                 .description(team.getDescription())
-                .memberCount(team.getMemberCount())
+                .memberCount(members.size())
                 .members(members)
+                .build();
+    }
+
+    public TeamResponse getTeamWithSortedMembers(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
+
+        List<Member> members = memberRepository.findByTeamAndStatus(team, MemberStatus.APPROVE);
+        List<Member> approvedMembers = memberRepository.findByTeamAndStatus(team, MemberStatus.APPROVE);
+
+        List<MemberDistanceDTO> memberDistances = approvedMembers.stream()
+                .map(member -> {
+                    double totalDistance = recordService.calculateTotalDistance(member);  // ✅ Crdnt 거리 계산 함수 사용
+                    return MemberDistanceDTO.builder()
+                            .userId(member.getUserId())
+                            .nickname(member.getNickname())
+                            .totalDistance(totalDistance)
+                            .build();
+                })
+                .sorted(Comparator.comparingDouble(MemberDistanceDTO::getTotalDistance).reversed())
+                .toList();
+
+        return TeamResponse.builder()
+                .teamId(team.getTeamId())
+                .name(team.getName())
+                .leader(team.getLeader())
+                .memberCount(members.size())
+                .sortedMembersByDistance(memberDistances)
                 .build();
     }
 

@@ -17,6 +17,7 @@ public class TeamResponse {
     private String description;
     private int memberCount;
     private List<MemberSimpleDto> members;
+    private List<MemberDistanceDTO> sortedMembersByDistance;
 
     @Data
     @Builder

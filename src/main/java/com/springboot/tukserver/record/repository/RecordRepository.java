@@ -10,8 +10,7 @@ import java.util.List;
 public interface RecordRepository extends JpaRepository<DriveRecord, Long> {
 
     List<DriveRecord> findAllByMemberOrderByEndTimeDesc(Member member);
-    List<DriveRecord> findByMember_Team_TeamId(Long teamId);
-    List<DriveRecord> findByMember(Member member);
+    List<DriveRecord> findAllByMember(Member member);
 
 
 }

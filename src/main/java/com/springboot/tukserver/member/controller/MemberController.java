@@ -9,7 +9,9 @@ import com.springboot.tukserver.member.repository.MemberRepository;
 import com.springboot.tukserver.member.service.MemberService;
 import com.springboot.tukserver.security.CustomUserDetails;
 import com.springboot.tukserver.team.domain.Team;
+import com.springboot.tukserver.team.domain.TeamApplicationHistory;
 import com.springboot.tukserver.team.dto.TeamApplicationResponse;
+import com.springboot.tukserver.team.repository.TeamApplicationHistoryRepository;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,7 @@ public class MemberController {
     private final MemberService memberService;
     private final AuthenticationManager authenticationManager;
     private final MemberRepository memberRepository;
+    private final TeamApplicationHistoryRepository teamApplicationHistoryRepository;
 
 
     @PostMapping("/register")
@@ -223,7 +226,7 @@ public class MemberController {
     }
 
     @PostMapping("/applyTeam/{teamId}")
-    public ResponseEntity<ApiResponse<Void>> applyToTeamWithToken(@PathVariable Long teamId) {
+    public ResponseEntity<ApiResponse<MemberStatus>> applyToTeamWithToken(@PathVariable Long teamId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -245,7 +248,7 @@ public class MemberController {
         // ✅ 팀 신청 로직 수행
         memberService.applyToTeam(member.getMemberId(), teamId);
 
-        return ResponseEntity.ok(new ApiResponse<>(true, "팀 신청 완료(대기 중).", null));
+        return ResponseEntity.ok(new ApiResponse<>(true, "팀 신청 완료(대기 중).", MemberStatus.PENDING));
     }
 
     @GetMapping("/listMembers")
@@ -258,7 +261,7 @@ public class MemberController {
     }
 
 
-    @GetMapping("/applyList")
+    @GetMapping("/applyStatus")
     public ResponseEntity<ApiResponse<List<TeamApplicationResponse>>> getMyTeamApplications() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -337,6 +340,5 @@ public class MemberController {
                     .body(new ApiResponse<>(false, "업로드 실패: " + e.getMessage(), null));
         }
     }
-
 
 }

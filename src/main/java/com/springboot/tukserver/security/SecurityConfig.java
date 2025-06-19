@@ -42,23 +42,20 @@ public class SecurityConfig {
                 .cors().configurationSource(corsConfigurationSource())  // 추가
                 .and()
                 .csrf().disable()
+                .formLogin().disable()
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/member/register", "/api/member/login").permitAll()  // ✅ 회원가입 API는 인증 없이 허용.
-                        .requestMatchers(HttpMethod.GET, "/member/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/member/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/member/**").permitAll()
                         .requestMatchers("/api/member/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")  // ✅ 관리자만 접근 가능
                         .requestMatchers("/api/drive-records/**").authenticated()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .anyRequest().permitAll()  // ✅ 나머지 요청은 모두 허용 (필요하면 `authenticated()`로 변경 가능)
-                )
-                .formLogin(login -> login
-                        .loginPage("/member/login")  // ✅ 로그인 페이지 설정
-                        .defaultSuccessUrl("/", true)  // ✅ 로그인 성공 시 리디렉트
-                        .permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout((logout) -> logout
@@ -106,6 +103,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
         configuration.addAllowedOrigin("https://2b00-1-237-205-122.ngrok-free.app");
+        configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
 
