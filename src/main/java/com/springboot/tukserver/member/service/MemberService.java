@@ -4,10 +4,15 @@ import com.springboot.tukserver.member.domain.Member;
 import com.springboot.tukserver.member.dto.MemberProfileResponse;
 import com.springboot.tukserver.member.dto.MemberSimpleDTO;
 import com.springboot.tukserver.member.domain.MemberStatus;
+import com.springboot.tukserver.member.dto.RejectHistoryDTO;
 import com.springboot.tukserver.member.repository.MemberRepository;
+import com.springboot.tukserver.record.repository.RecordRepository;
+import com.springboot.tukserver.record.service.RecordService;
 import com.springboot.tukserver.team.domain.Team;
+import com.springboot.tukserver.team.domain.TeamApplicationHistory;
 import com.springboot.tukserver.team.dto.TeamApplicationResponse;
 import com.springboot.tukserver.team.dto.TeamResponse;
+import com.springboot.tukserver.team.repository.TeamApplicationHistoryRepository;
 import com.springboot.tukserver.team.repository.TeamRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +42,8 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final TeamRepository teamRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TeamApplicationHistoryRepository teamApplicationHistoryRepository;
+    private final RecordService recordService;
 
     public Member registerMember(String userId, String password, String name, String email, String nickname) {
 
@@ -51,10 +58,12 @@ public class MemberService {
 
     }
 
-    public MemberService(MemberRepository memberRepository, TeamRepository teamRepository, PasswordEncoder passwordEncoder) {
+    public MemberService(MemberRepository memberRepository, TeamRepository teamRepository, PasswordEncoder passwordEncoder, TeamApplicationHistoryRepository teamApplicationHistoryRepository, RecordService recordService) {
         this.memberRepository = memberRepository;
         this.teamRepository = teamRepository;
         this.passwordEncoder = passwordEncoder;
+        this.teamApplicationHistoryRepository = teamApplicationHistoryRepository;
+        this.recordService = recordService;
     }
 
     public Member findMemberById(Long memberId) {
@@ -294,10 +303,27 @@ public class MemberService {
             throw new IllegalArgumentException("같은 팀이 아닙니다.");
         }
 
+        double totalDistance = recordService.calculateTotalDistance(target);
+
         return MemberProfileResponse.builder()
                 .nickname(target.getNickname())
                 .profileImageUrl(target.getProfileImageUrl())
+                .totalDistance(totalDistance)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RejectHistoryDTO> getLatestRejects(Long memberId) {
+        List<TeamApplicationHistory> histories = teamApplicationHistoryRepository
+                .findLatestRejectsByUserIdGroupedByTeam(memberId);
+
+        return histories.stream()
+                .map(h -> new RejectHistoryDTO(
+                        h.getTeam().getTeamId(),
+                        h.getTeam().getName(),
+                        h.getStatus()
+                ))
+                .toList();
     }
 
 

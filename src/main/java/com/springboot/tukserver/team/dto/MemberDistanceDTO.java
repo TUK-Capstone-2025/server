@@ -11,6 +11,7 @@ import lombok.Setter;
 @Builder
 public class MemberDistanceDTO {
 
+    private long memberId;
     private String userId;
     private String nickname;
     private double totalDistance;

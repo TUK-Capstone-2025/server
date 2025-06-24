@@ -60,9 +60,10 @@ public class TeamService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("팀을 찾을 수 없습니다."));
 
-        // 🔍 리더 userId → memberId 변환
-        Member leader = memberRepository.findByUserId(team.getLeader())
-                .orElseThrow(() -> new RuntimeException("리더를 찾을 수 없습니다."));
+        // ✅ leader userId → Member 조회 → memberId 추출
+        String leaderUserId = team.getLeader();  // String
+        Member leaderMember = memberRepository.findByUserId(leaderUserId)
+                .orElseThrow(() -> new RuntimeException("리더 멤버를 찾을 수 없습니다."));
 
         List<TeamResponse.MemberSimpleDto> members = team.getMembers().stream()
                 .filter(member -> member.getStatus() == MemberStatus.APPROVE)
@@ -76,7 +77,7 @@ public class TeamService {
         return TeamResponse.builder()
                 .teamId(team.getTeamId())
                 .name(team.getName())
-                .leader(String.valueOf(leader.getMemberId()))
+                .leader(leaderMember.getMemberId())
                 .description(team.getDescription())
                 .memberCount(members.size())
                 .members(members)
@@ -90,10 +91,15 @@ public class TeamService {
         List<Member> members = memberRepository.findByTeamAndStatus(team, MemberStatus.APPROVE);
         List<Member> approvedMembers = memberRepository.findByTeamAndStatus(team, MemberStatus.APPROVE);
 
+        String leaderUserId = team.getLeader();  // String
+        Member leaderMember = memberRepository.findByUserId(leaderUserId)
+                .orElseThrow(() -> new RuntimeException("리더 멤버를 찾을 수 없습니다."));
+
         List<MemberDistanceDTO> memberDistances = approvedMembers.stream()
                 .map(member -> {
                     double totalDistance = recordService.calculateTotalDistance(member);  // ✅ Crdnt 거리 계산 함수 사용
                     return MemberDistanceDTO.builder()
+                            .memberId(member.getMemberId())
                             .userId(member.getUserId())
                             .nickname(member.getNickname())
                             .totalDistance(totalDistance)
@@ -105,7 +111,7 @@ public class TeamService {
         return TeamResponse.builder()
                 .teamId(team.getTeamId())
                 .name(team.getName())
-                .leader(team.getLeader())
+                .leader(leaderMember.getMemberId())
                 .memberCount(members.size())
                 .sortedMembersByDistance(memberDistances)
                 .build();

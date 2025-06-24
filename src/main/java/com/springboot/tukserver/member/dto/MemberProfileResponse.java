@@ -3,7 +3,6 @@ package com.springboot.tukserver.member.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
 @Builder
@@ -12,5 +11,6 @@ public class MemberProfileResponse {
 
     private String nickname;
     private String profileImageUrl;
+    private double totalDistance;
 
 }

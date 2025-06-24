@@ -13,7 +13,7 @@ public class TeamResponse {
 
     private Long teamId;
     private String name;
-    private String leader;
+    private Long leader;
     private String description;
     private int memberCount;
     private List<MemberSimpleDto> members;

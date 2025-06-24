@@ -172,7 +172,7 @@ public class RecordService {
             totalDistance += haversine(prev.getLatitude(), prev.getLongitude(),
                     curr.getLatitude(), curr.getLongitude());
         }
-        return totalDistance;
+        return Math.round(totalDistance * 100.0) / 100.0;
     }
 
     // Haversine 거리 계산 (단위: km)

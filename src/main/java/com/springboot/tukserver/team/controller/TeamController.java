@@ -99,8 +99,13 @@ public class TeamController {
 
     @GetMapping("/{teamId}")
     public ResponseEntity<ApiResponse<TeamResponse>> getTeamDetail(@PathVariable Long teamId) {
-        TeamResponse response = teamService.getTeamDetail(teamId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "팀 상세 정보 조회 성공", response));
+        try {
+            TeamResponse response = teamService.getTeamWithSortedMembers(teamId);  // ✅ 여기만 바꿈
+            return ResponseEntity.ok(new ApiResponse<>(true, "팀 상세 정보 조회 성공", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "오류: " + e.getMessage(), null));
+        }
     }
 
     // 🔍 토큰에서 로그인한 유저 ID 추출 메서드

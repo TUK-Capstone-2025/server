@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
@@ -324,7 +325,7 @@ public class MemberController {
 
             File dest = new File(uploadDir + "/" + fileName);
             file.transferTo(dest);
-            String imageUrl = "https://2b00-1-237-205-122.ngrok-free.app/images/profile/" + fileName;
+            String imageUrl = "https://339c-210-99-254-13.ngrok-free.app/images/profile/" + fileName;
 
             // 토큰 기반 사용자 식별
             String userId = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -339,6 +340,14 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(false, "업로드 실패: " + e.getMessage(), null));
         }
+    }
+
+    @GetMapping("/rejectList")
+    public ResponseEntity<ApiResponse<List<RejectHistoryDTO>>> getRejectList(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        List<RejectHistoryDTO> rejects = memberService.getLatestRejects(userDetails.getMemberId());
+        return ResponseEntity.ok(new ApiResponse<>(true, "거절된 팀 신청 내역 조회 성공", rejects));
     }
 
 }
