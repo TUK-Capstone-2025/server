@@ -80,7 +80,6 @@ public class TeamService {
                 .leader(leaderMember.getMemberId())
                 .description(team.getDescription())
                 .memberCount(members.size())
-                .members(members)
                 .build();
     }
 

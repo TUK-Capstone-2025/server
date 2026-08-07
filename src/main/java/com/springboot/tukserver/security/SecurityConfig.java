@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/member/**").permitAll()
                         .requestMatchers("/api/member/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")  // ✅ 관리자만 접근 가능
-                        .requestMatchers("/api/drive-records/**").authenticated()
+                        .requestMatchers("/api/record/**").authenticated()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .anyRequest().permitAll()  // ✅ 나머지 요청은 모두 허용 (필요하면 `authenticated()`로 변경 가능)
@@ -102,8 +102,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-        configuration.addAllowedOrigin("https://2b00-1-237-205-122.ngrok-free.app");
-        configuration.addAllowedOriginPattern("*");
+        configuration.addAllowedOrigin("https://08f83e3aa286.ngrok-free.app");
+        configuration.addAllowedOrigin("http://localhost:3000");
+        configuration.addAllowedOrigin("http://localhost:8080");
+        configuration.addAllowedOrigin("http://localhost:8081");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
 

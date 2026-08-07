@@ -325,7 +325,7 @@ public class MemberController {
 
             File dest = new File(uploadDir + "/" + fileName);
             file.transferTo(dest);
-            String imageUrl = "https://339c-210-99-254-13.ngrok-free.app/images/profile/" + fileName;
+            String imageUrl = "https://f9237630f53d.ngrok-free.app/images/profile/" + fileName;
 
             // 토큰 기반 사용자 식별
             String userId = SecurityContextHolder.getContext().getAuthentication().getName();

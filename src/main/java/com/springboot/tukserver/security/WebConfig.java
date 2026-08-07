@@ -13,7 +13,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:8080", "http://localhost:8081", "http://localhost:3000", "https://2b00-1-237-205-122.ngrok-free.app" ) // 허용할 출처
+                .allowedOrigins("http://localhost:8080", "http://localhost:8081", "http://localhost:3000", "https://08f83e3aa286.ngrok-free.app" ) // 허용할 출처
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 허용할 HTTP method
                 .allowCredentials(true) // 쿠키 인증 요청 허용
                 .allowedHeaders("*") // 또는 .allowedHeaders("Authorization", "Content-Type")
